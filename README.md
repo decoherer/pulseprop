@@ -38,9 +38,9 @@ Run `python pulseprop.py` for more demos.
 
 ## Example
 
-![Pump, seed, and SFG powers vs time](sfgpulsepropagation.png)
+![Pump, SHG, and SFG powers vs time](sfgpulsepropagation.png)
 
-Plot of pump, seed, and SFG powers vs time at the output of a 1mm length MgLN ridge waveguide with interleaved QPM poling for both 1555nm doubling and 1555nm+777.5nm tripling given 0.2ps Gaussian FWHM input pulse with 1000W peak power at 1555nm. This figure is produced by:
+Plot of pump, SHG, and SFG powers vs time at the output of a 1mm length MgLN ridge waveguide with interleaved QPM poling for both 1555nm SHG doubling and 1555nm+777.5nm SFG tripling given 0.2ps Gaussian FWHM input pulse with 1000W peak power at 1555nm. This figure is produced by:
 
 ```python
 triplerpulseprop(τ=.2, L=1, P1=1000, η1=30, η2=250,
