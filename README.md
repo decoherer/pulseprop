@@ -112,3 +112,158 @@ OPA convenience wrapper built on `threewavepulseprop`. You pass the pump (`P3, �
 
 Fourier transform utility mapping a time‑domain envelope `A(t)` to a spectrum `B(λ)` or `B(f)` with consistent energy scaling. Useful for verifying time–bandwidth products and visualizing spectra. If `vsfreq=True`, returns `B(f)`; otherwise returns `B(λ)`.
 
+# Model Summary
+
+## Fields and normalization
+
+The code propagates slowly varying complex envelopes $A_j(z,t)$ for bands $j \in \{1,2,3\}$ centered at carrier frequencies $\omega_j = 2\pi c / \lambda_j$.  
+The physical field is:
+
+$$E_j(z,t) = \mathrm{Re}\{ A_j(z,t) e^{i(k_j z - \omega_j t)} \}, \quad k_j = k(\omega_j)$$
+
+Envelopes are normalized so that instantaneous power is $P_j(z,t) = |A_j(z,t)|^2$ in watts.  
+Time $t$ is in picoseconds. Propagation distance $z$ is in millimeters.
+
+---
+
+## Linear dispersion
+
+Material dispersion comes from the Sellmeier refractive index $n(\lambda)$.  
+The wavenumber is $k(\omega) = n(\omega)\, \omega / c$.
+
+Linear operator in frequency domain:
+
+$$\partial_z \tilde{A}_j(z,\Omega) = i\, \Phi_j(\Omega)\, \tilde{A}_j(z,\Omega)$$
+
+with
+
+$$\Phi_j(\Omega) = k(\omega_j + \Omega) - k(\omega_j)$$
+
+Expanding $\Phi_j(\Omega)$ includes all orders of dispersion:
+
+$$\Phi_j(\Omega) = k'_j\,\Omega + \tfrac{1}{2}k''_j\,\Omega^2 + \tfrac{1}{6}k^{(3)}_j\,\Omega^3 + \cdots, \quad v_{g,j} = 1/k'_j$$
+
+---
+
+## Nonlinear $\chi^{(2)}$ coupling
+
+Coupling uses the standard three‑wave slowly‑varying‑envelope equations.  
+A complex poling profile $d(z)$ and QPM period $\Lambda$ determine the phase mismatch $\Delta k$.
+
+### SFG / DFG form
+
+For sum‑frequency generation (SFG) with $\omega_3 = \omega_1 + \omega_2$ (change sign of $\omega_2$ for DFG/OPA):
+
+$$
+\begin{aligned}
+\partial_z A_1 &= i g_1 d^{\ast}(z) A_2^{\ast} A_3 e^{-i\Delta k z} \\
+\partial_z A_2 &= i g_2 d^{\ast}(z) A_1^{\ast} A_3 e^{-i\Delta k z} \\
+\partial_z A_3 &= i g_3 d(z) A_1 A_2 e^{+i\Delta k z}
+\end{aligned}
+$$
+
+$$\Delta k = k(\omega_3) - k(\omega_2) - k(\omega_1) - \tfrac{2\pi m}{\Lambda}$$
+
+### SHG form
+
+For second‑harmonic generation (SHG) with $\omega_3 = 2\omega_1$:
+
+$$
+\begin{aligned}
+\partial_z A_1 &= i \gamma_1 d^{\ast}(z) A_1^{\ast} A_3 e^{-i\Delta k z} \\
+\partial_z A_3 &= i \gamma_3 d(z) A_1^{2} e^{+i\Delta k z}
+\end{aligned}
+$$
+
+$$\Delta k = k(2\omega_1) - 2k(\omega_1) - \tfrac{2\pi m}{\Lambda}$$
+
+The constants $g_j$ and $\gamma_j$ are derived from $\eta$ (%/W/cm²) and incorporate $d_\mathrm{eff}$, overlap integrals, and unit conversions.  
+$|A|^2$ always represents power.
+
+---
+
+## Cascaded tripling
+
+`triplerpulseprop` simulates simultaneous SHG and SFG in one medium:
+
+$$
+\begin{aligned}
+\partial_z A_1 &= i[\gamma_1 A_1^{\ast} A_2 e^{-i\Delta k_{12} z} + g_1 A_2^{\ast} A_3 e^{-i\Delta k_{123} z}] \\
+\partial_z A_2 &= i[\gamma_3 A_1^{2} e^{+i\Delta k_{12} z} + g_2 A_1^{\ast} A_3 e^{-i\Delta k_{123} z}] \\
+\partial_z A_3 &= i g_3 A_1 A_2 e^{+i\Delta k_{123} z}
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+\Delta k_{12} &= k(2\omega_1) - 2k(\omega_1) - \frac{2\pi m}{\Lambda_1} \\
+\Delta k_{123} &= k(3\omega_1) - k(2\omega_1) - k(\omega_1) - \frac{2\pi m}{\Lambda_2}
+\end{aligned}
+$$
+
+Independent couplings $\eta_1$ (SHG) and $\eta_2$ (SFG), and QPM periods $\Lambda_1$, $\Lambda_2$ are supported.
+
+---
+
+## Numerical method
+
+Method of lines in $z$ with FFT‑based linear propagation.
+
+1. Time sampled uniformly with step $\Delta t$ over a window $T$.  
+   FFTs imply periodic boundaries; $T$ must exceed total walk‑off.
+2. State vector $\mathbf{A} = [A_1(t),A_2(t),A_3(t)]$ satisfies  
+   $\partial_z \mathbf{A} = L[\mathbf{A}] + N[\mathbf{A},z]$,  
+   where $L$ is linear (dispersion) and $N$ nonlinear ($\chi^{(2)}$).
+3. Integrated using adaptive Runge–Kutta (`DOP853`) in `scipy.integrate.solve_ivp`.
+
+No split‑step approximation; both parts evaluated together.
+
+---
+
+## Initial conditions
+
+Each band starts as a transform‑limited Gaussian pulse of power FWHM $\tau$:
+
+$$A(t) = \sqrt{P_\mathrm{peak}} \exp[-4\ln(2)(t^2/\tau^2)]$$
+
+Unspecified bands start at zero.
+
+---
+
+## Conservation laws
+
+For perfect phase matching ($\Delta k = 0$) and constant coupling:
+
+$$\partial_z\left(\frac{|A_1|^2}{\omega_1} + \frac{|A_2|^2}{\omega_2} - \frac{|A_3|^2}{\omega_3}\right) = 0$$
+
+The implementation preserves Manley–Rowe invariants to numerical tolerance.
+
+---
+
+## QPM and poling profiles
+
+$\Lambda$ sets first‑order QPM via $2\pi/\Lambda$.  
+$d(z)$ may encode chirp, apodization, or duty‑cycle modulation.  
+Setting $d(z)=1$ yields uniform QPM.
+
+---
+
+## Modeled physics
+
+- Dispersion from Sellmeier $n(\lambda)$ to all orders  
+- Group‑delay walk‑off between bands  
+- SHG, SFG, DFG/OPA, and cascaded tripling
+
+### Not modeled
+
+- Diffraction or spatial walk‑off  
+- Linear loss, reflection, or absorption  
+- Kerr ($\chi^{(3)}$) terms, Raman, or noise seeding
+
+---
+
+## Practical guidance
+
+- Time window: $T \gtrsim 6\tau + L|1/v_{g,i} - 1/v_{g,j}|$  
+- Step size: ensure spectral bandwidth $< 0.3/\Delta t$  
+- Calibrate $\eta$ to CW or low‑gain data before predictive simulations
