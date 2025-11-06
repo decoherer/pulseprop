@@ -2,10 +2,9 @@ import numpy as np
 from numpy import pi,exp,log,abs,sqrt,conj
 from wavedata import Wave,wrange,logrange,timeit,track
 import scipy, scipy.integrate
-import matplotlib.pyplot as plt
 from sellmeier import index,polingperiod,qpmwavelengths,groupvelocity,groupindex,groupvelocitydispersion,dispersionlength
-from joblib import Memory
-memory = Memory('c:/backup', verbose=0) # use as @memory.cache
+# from joblib import Memory
+# memory = Memory('c:/backup', verbose=0) # use as @memory.cache
 
 def transformlimitedbandwidth(dt,λ): # dt=tFWHM in ns, returns Δλ in nm
     df = 2*log(2)/pi/dt # in GHz
@@ -93,7 +92,7 @@ def temporal2spectral(A,λ0,vsfreq=False,correctphaseramp=False,plot=False,logpl
             B.magsqr().plot(x='wavelength (nm)',y='power (pJ/nm)',seed=λ0,xlim=xlim,legendtext=f'{B.magsqr().sum()*dλ0*1e12:g}pJ pulse energy',grid=1,log=logplot)
     return B
 # @timeit
-@memory.cache
+# @memory.cache
 def shgpulseprop(τ,L,P,η=0,λ0=1550,sell='ktp',Type='zzz',Λ=None,dt=0.005,d=None,rtol=1e-3,atol=1e-6,plot=False): # τ = fwhm pulse duration in ps, L in mm, P = peak power in W, η in %/W/cm², Λ in µm
     c = 0.299792458  # mm/ps = m/ns
     λ1,λ3 = λ0,λ0/2
@@ -288,7 +287,7 @@ def consec2d2(z): return z>0.25
 aa = Wave([0,0.0780203,0.153918,0.226646,0.295616,0.360619,0.421755,0.47936,0.533936,0.586109,0.63662,0.686245,0.7349,0.782245,0.827742,0.870612,0.909812,0.94405,0.971803,0.991343,1],wrange(0,1,0.05))
 def dlinmax(z): return aa(z)
 def drevmax(z): return aa(1-z)
-@memory.cache
+# @memory.cache
 def ηfromd(g,L=2.5):
     aa = Wave([0,0.0780203,0.153918,0.226646,0.295616,0.360619,0.421755,0.47936,0.533936,0.586109,0.63662,0.686245,0.7349,0.782245,0.827742,0.870612,0.909812,0.94405,0.971803,0.991343,1],wrange(0,1,0.05))
     # g = array that defines shg efficiency vs length (sfg efficiency is [1-x for x in g])
