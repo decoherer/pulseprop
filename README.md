@@ -1,7 +1,5 @@
 # pulseprop — Nonlinear optical pulse propagation
 
- ultrafast pulse propagation
-
 Time‑domain simulations for second‑order (χ²) nonlinear optics: second‑harmonic generation (SHG), sum‑frequency generation (SFG), cascaded tripling, general three‑wave mixing, and optical parametric amplification (OPA). Uses Sellmeier dispersion and integrates the coupled envelopes along the crystal.
 
 ---
