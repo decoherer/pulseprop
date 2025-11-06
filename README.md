@@ -36,7 +36,7 @@ Run `python pulseprop.py` for more demos.
 
 ---
 
-## Figure
+## Example
 
 ![Pump, seed, and SFG powers vs time](sfgpulsepropagation.png)
 
